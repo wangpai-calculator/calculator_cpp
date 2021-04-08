@@ -1,12 +1,40 @@
 
-//
+//arithoper：arithmetic operation 算术运算 
+//注意：模板函数不能放到源文件中
+#pragma once
 
-
-#include "arithoper.h"
+#include <cctype>
+#include <cmath>
+#include <iostream>
+#include "stack_templet.h"
 
 namespace arithoper
 {
-	using namespace std;
+	template <typename InputType>
+	void inreset(InputType& inputype);
+
+	ios_base::fmtflags coutset(int n);
+
+	int parematch();
+
+	char precede(char operleft, char operight);
+
+	void show(WangpaiStack<char>& expression);
+
+	void show2(WangpaiStack<char>& expression, WangpaiStack<double>& medresult, char delimiter = '#');
+
+	bool loadopnd();
+
+	bool unloadopnd();
+
+	double calculate(double opndleft, char optr_, double opndright);
+
+	void showcalpro();
+
+	template <typename InputType>
+	double evalexpre(InputType& inputype, bool iscin = true);
+
+
 	WangpaiStack<double> opnd;//opnd：operand 操作数
 	WangpaiStack<char> opndbuff;//opndbuff：operand buffer 缓存的操作数的每一位的值
 	WangpaiStack<char> optr;//optr：operator 运算符
@@ -14,7 +42,12 @@ namespace arithoper
 	WangpaiStack<char> ndbfbackup;//ndbfbackup：operand buffer backup 缓存区的备份
 	//此变量ndbfbackup暂时未起到作用，只是为了保留给以后使用
 
-	void inreset()//inreset：input reset 输入重置
+
+	template <typename InputType>
+	void inreset(InputType& inputype)//inreset：input reset 输入重置
+	{/*这是一个待实现的函数*/}
+
+	void inreset(std::istream& rcin)//inreset：input reset 输入重置
 	{
 		using namespace std;
 		cin.clear();
@@ -61,7 +94,7 @@ namespace arithoper
 
 	char precede(char operleft, char operight) //operleft：operator left 左边的运算符，operight：operator right 右边的运算符
 	{//注意：C++本身的语法里面，==的优先级比&&高，&&的优先级比||高
-		if (operleft == '(' && operight == ')') 
+		if (operleft == '(' && operight == ')')
 			return '=';
 		else if (operight == '.')
 			return '<';
@@ -89,7 +122,7 @@ namespace arithoper
 
 	void show2(WangpaiStack<char>& expression, WangpaiStack<double>& medresult, char delimiter)// medresult：intermediate result 中间结果
 	{//这里delimiter有默认参数，默认参数为#，当其为其他符号时，意味着可能将输出最后的定界符前置
-	//expression、medresult自身必须要是以栈保存的逆序
+		//expression、medresult自身必须要是以栈保存的逆序
 		if (true == expression.isemp())
 			return;
 		else
@@ -112,14 +145,14 @@ namespace arithoper
 					--order2;
 				}
 				else
-				cout << expression[order1];
+					cout << expression[order1];
 			}
 		}
 	}
 
 	bool loadopnd()//将opndbuff内的缓存数字转换成操作数压入操作数栈，loadopnd：load operand 装载操作数
 	{//此算法希望尽量不使用链表的方法而使用链栈的方法
-	 //如果实际装载了操作数，返回true
+		//如果实际装载了操作数，返回true
 		if (true == opndbuff.isemp())
 			return false;
 
@@ -138,7 +171,7 @@ namespace arithoper
 		}
 
 		for (int digit = 1; !opndbuff.isemp(); ++digit)//整数部分可以不用反转直接弹出
-			sum = sum + (opndbuff.pop() - '0') * pow(10, digit-1);
+			sum = sum + (opndbuff.pop() - '0') * pow(10, digit - 1);
 
 		opnd.push(sum);
 		return true;
@@ -154,9 +187,9 @@ namespace arithoper
 		return true;
 	}
 
-	double calculate(double opndleft, char optr_, double opndright) 
+	double calculate(double opndleft, char optr_, double opndright)
 	{//计算两数运算结果，如果optr_是下面未给出的运算符，那程序运行以后将报弹窗错误
-		switch (optr_) 
+		switch (optr_)
 		{
 		case '+':
 			return opndleft + opndright;
@@ -175,7 +208,7 @@ namespace arithoper
 
 	void showcalpro()//showcalpro：show the calculation process 展示计算过程
 	{//此函数默认inte里面没有语法错误，而且inte没有被清空
-     //此函数会首先清空opnd、opndbuff、optr的内容
+		//此函数会首先清空opnd、opndbuff、optr的内容
 		if (inte.isemp())
 		{
 			cout << endl << "表达式不存在，无法展示细节" << endl;
@@ -198,8 +231,8 @@ namespace arithoper
 		opndbuff.emplist();
 		optr.emplist();
 		char ch = antinte.pop();
-		
-		while (!antinte.isemp() || intedup.isemp() || '='!=intedup.getop())
+
+		while (!antinte.isemp() || intedup.isemp() || '=' != intedup.getop())
 		{
 			if ('=' == ch && optr.isemp())//如果循环对=前面的操作已处理完毕
 			{
@@ -233,48 +266,48 @@ namespace arithoper
 					intedup.push(ch);
 					break;
 				case '>':
-					{//case中如有变量初始化一定要加{},不然会报初始化操作由case标签跳过
-						bool pointflag = false;//如果下面是小数点导致的运算，此标志将置true
-						char optr_ = optr.pop();
-						if ('.' == optr_)
-							pointflag = true;
-						double opndright = opnd.pop();
-						double opndleft = opnd.pop();
-						for (int i = 1; i <= 3; ++i)
-							intedup.pop();//弹出两个操作数、一个运算符，共三个字符
-						double medresult = calculate(opndleft, optr_, opndright);
-						// medresult：intermediate result 中间结果
-						opnd.push(medresult);
-						intedup.push('#');//'#'为转换符，遇到此符，说明此处是操作数，需要去别处寻找
-								
-						if (!pointflag)//如果是小数点导致的运算，不计入本程序的一次运算、将跳过if里面的内容
-						{   //下面将显示表达式本步运算的相关内容。这需要同时显示前面已经计算的操作intedup、当前的符号ch、以及尚未读取的表达式antinte
-							
-							//因为antinte其实是正序的，而这里show2的传参必须是栈的逆序，所以这里要进行复杂的倒序
-							auto poleft = antinte;//poleft：the leftover in positive order 剩下的正序元素 
-							poleft.push(ch);
-							auto reverleft = poleft;//reverleft：the leftover in reverse order 剩下的逆序元素
-							reverleft.emplist();
-							while (!poleft.isemp())
-								reverleft.push(poleft.pop());
-							auto fulexp = reverleft;//fulexp：full expression 完整表达式
-							fulexp += intedup;//因为show2的传参需要栈逆序，而intedup本身就是逆序，所以这里是直接将intedup接在reverleft的后面
+				{//case中如有变量初始化一定要加{},不然会报初始化操作由case标签跳过
+							bool pointflag = false;//如果下面是小数点导致的运算，此标志将置true
+							char optr_ = optr.pop();
+							if ('.' == optr_)
+								pointflag = true;
+							double opndright = opnd.pop();
+							double opndleft = opnd.pop();
+							for (int i = 1; i <= 3; ++i)
+								intedup.pop();//弹出两个操作数、一个运算符，共三个字符
+							double medresult = calculate(opndleft, optr_, opndright);
+							// medresult：intermediate result 中间结果
+							opnd.push(medresult);
+							intedup.push('#');//'#'为转换符，遇到此符，说明此处是操作数，需要去别处寻找
 
-							cout << endl;
-							show2(fulexp, opnd, '=');
-							flag = true;//这是为了告诉程序，本函数至少执行了一次计算
-						}
-						continue;/*这是为了跳过下面的input输入，因为能执行这个代码块，
-								 说明ch的优先级比较低，因此尚未入栈（未经过处理），所以不需要新的输入*/
-					}
+							if (!pointflag)//如果是小数点导致的运算，不计入本程序的一次运算、将跳过if里面的内容
+							{   //下面将显示表达式本步运算的相关内容。这需要同时显示前面已经计算的操作intedup、当前的符号ch、以及尚未读取的表达式antinte
+
+								//因为antinte其实是正序的，而这里show2的传参必须是栈的逆序，所以这里要进行复杂的倒序
+								auto poleft = antinte;//poleft：the leftover in positive order 剩下的正序元素 
+								poleft.push(ch);
+								auto reverleft = poleft;//reverleft：the leftover in reverse order 剩下的逆序元素
+								reverleft.emplist();
+								while (!poleft.isemp())
+									reverleft.push(poleft.pop());
+								auto fulexp = reverleft;//fulexp：full expression 完整表达式
+								fulexp += intedup;//因为show2的传参需要栈逆序，而intedup本身就是逆序，所以这里是直接将intedup接在reverleft的后面
+
+								cout << endl;
+								show2(fulexp, opnd, '=');
+								flag = true;//这是为了告诉程序，本函数至少执行了一次计算
+							}
+							continue;/*这是为了跳过下面的input输入，因为能执行这个代码块，
+									 说明ch的优先级比较低，因此尚未入栈（未经过处理），所以不需要新的输入*/
+				}
 				case '=':
-					{//如果两个括号之间没有其他运算符，就只有一个操作数
-						optr.pop();//弹出运算符栈的左括号
-						auto opnd_temp = intedup.pop();/*现在弹出的不是左括号，因为intedup中的左括号离栈顶还有一个操作数。
-													   而两个括号之间的操作数不是我们想要弹出的，因此要先保存该操作数*/
-						intedup.pop();//弹出左括号
-						intedup.push(opnd_temp);//将前面被迫先暂时弹出的操作数再加入栈中
-					}	
+				{//如果两个括号之间没有其他运算符，就只有一个操作数
+							optr.pop();//弹出运算符栈的左括号
+							auto opnd_temp = intedup.pop();/*现在弹出的不是左括号，因为intedup中的左括号离栈顶还有一个操作数。
+														   而两个括号之间的操作数不是我们想要弹出的，因此要先保存该操作数*/
+							intedup.pop();//弹出左括号
+							intedup.push(opnd_temp);//将前面被迫先暂时弹出的操作数再加入栈中
+				}
 					break;
 				}//switch的右括号
 			}//else的右括号
@@ -290,7 +323,11 @@ namespace arithoper
 
 	}
 
-	void evalexpre()//evalexpre：evaluate expression 对表达式求值
+
+	//InputType必须要定义“成员>>运算符函数”
+	//iscin有默认参数true，当inputype不是cin时，需要给它改为false
+	template <typename InputType>
+	double evalexpre(InputType& inputype, bool iscin)//evalexpre：evaluate expression 对表达式求值
 	{
 		cout << "请输入一个表达式（你可以选择一个一个地输入，也可以选择一次性输完）：\n"
 			<< "(请注意除号是“/”，而不是“\\”)\n";
@@ -298,22 +335,22 @@ namespace arithoper
 		using namespace std;
 		show(inte);
 		char ch;
-		cin >> ch;
+		inputype >> ch;
 		while (optr.isemp() || '=' != optr.getop())//以=为结束标志
 		{
 			//先尽可能处理所有能单独判断的语法错误
-			if (!cin)
+			if (iscin && !cin)
 			{
 				cout << endl << "你进行了意外的输入，已为你重置" << endl;
-				inreset();
+				inreset(inputype);
 				show(inte);
 				goto input;
-			}	
+			}
 			if (('.' == ch) && !optr.isemp() && ('.' == optr.getop()))//一个操作数里，输入了两个小数点
 			{
 				cout << endl << "你不能在一个数里输入两个" << "“" << ch << "”"
 					<< "，已为你自动删除" << "“" << ch << "”" << "：" << endl;
-				inreset();
+				inreset(inputype);
 				show(inte);
 				goto input;
 			}
@@ -323,7 +360,7 @@ namespace arithoper
 			{
 				cout << endl << "注意：在输入" << "“" << ch << "”" << "前，你必须先输入一个合法的数。"
 					<< "已为你自动删除“" << ch << "”：" << endl;
-				inreset();
+				inreset(inputype);
 				show(inte);
 				goto input;
 			}
@@ -333,14 +370,14 @@ namespace arithoper
 			{
 				cout << endl << "你不能在" << "“" << inte.getop() << "”" << "的后面输入"
 					<< "“" << ch << "”" << "，已为你自动删除" << "“" << ch << "”" << "：" << endl;
-				inreset();
+				inreset(inputype);
 				show(inte);
 				goto input;
 			}
 			if ('(' == ch && !inte.isemp() && isdigit(inte.getop()) && ('.' == ch))//如果左括号前面有数字、小数点，报错
 			{
 				cout << endl << "左括号前面不能有数字，已为你自动删除" << "“" << ch << "”" << "：" << endl;
-				inreset();
+				inreset(inputype);
 				show(inte);
 				goto input;
 			}
@@ -350,14 +387,14 @@ namespace arithoper
 					|| '*' == inte.getop() || '/' == inte.getop())))//如果右括号前面有四则运算符，报错
 				{
 					cout << endl << "右括号前面不能有四则运算符，已为你自动删除" << "“" << ch << "”" << "：" << endl;
-					inreset();
+					inreset(inputype);
 					show(inte);
 					goto input;
 				}
 				if (!inte.isemp() && '(' == inte.getop())
 				{
 					cout << endl << "这一对括号里什么也没有，已为你自动删除这一对括号：" << endl;
-					inreset();
+					inreset(inputype);
 					optr.pop();
 					inte.pop();
 					show(inte);
@@ -370,7 +407,7 @@ namespace arithoper
 				if (false == matchresult)//如果右括号不匹配，报错
 				{
 					cout << endl << "右括号不匹配，已为你自动删除" << "“" << ch << "”" << "：" << endl;
-					inreset();
+					inreset(inputype);
 					show(inte);
 					goto input;
 				}
@@ -379,11 +416,11 @@ namespace arithoper
 			if (2 == parematch())//最后准备结束输入时，如果发现左括号多于右括号，报错
 			{
 				cout << endl << "左括号不能多于右括号，已为你自动删除" << "“" << ch << "”" << "：" << endl;
-				inreset();
+				inreset(inputype);
 				show(inte);
 				goto input;
 			}
-	
+
 			//现在的正常情况下的处理
 			//注意：此区域if else判断语句后面紧挨着的就是输入语句，所以这里的代码块中可能可以省略“goto input”部分
 			if ('=' == ch && optr.isemp())//如果循环对=前面的操作已处理完毕，那么这里将做收尾工作用以结束循环
@@ -412,7 +449,6 @@ namespace arithoper
 				}
 				switch (precede(optr.getop(), ch))
 				{/*此switch语句结束后，就直接是else的结束部分，而后者结束后就到了输入部分，所以这里“break”可能可以替代“goto input”*/
-
 				case '<':
 					optr.push(ch);
 					inte.push(ch);
@@ -424,7 +460,7 @@ namespace arithoper
 						if (!inte.isemp() && '0' == inte.getop())
 						{
 							cout << endl << "抱歉，0不能作除数，已为你自动删除：" << endl;
-							inreset();
+							inreset(inputype);
 							opnd.pop();
 							inte.pop();
 							show(inte);
@@ -433,12 +469,12 @@ namespace arithoper
 						else
 						{
 							cout << endl << "中间有的算式让除数为0，本次计算失败，正在为你定位到新输入：" << endl;
-							inreset();
+							inreset(inputype);
 							opnd.emplist();
-							opndbuff.emplist(); 
-							optr.emplist(); 
+							opndbuff.emplist();
+							optr.emplist();
 							inte.emplist();
-							break;
+							goto input;
 						}
 					}
 					{//case中如有变量初始化一定要加{},不然会报初始化操作由case标签跳过
@@ -457,13 +493,16 @@ namespace arithoper
 				}//switch的右括号
 			}//else的右括号
 
-		input:	cin >> ch;
+		input:	inputype >> ch;
 		}//while的右括号
+
+		double resulturn;//resulturn：result return 结果返回
 
 		if (opnd.isemp())
 		{
-			cout << endl << "此表达式为空，计算失败" << endl;
-			inreset();
+			cout << endl << "此表达式为空，计算失败，将把计算结果设为0" << endl;
+			inreset(inputype);
+			resulturn = 0;
 			opnd.emplist();
 			opndbuff.emplist();
 			optr.emplist();
@@ -473,7 +512,8 @@ namespace arithoper
 		{
 			cout << "\n\n输入结束，下面是计算结果：\n";
 			show(inte);//输出表达式（包括最后的“=”）
-			cout<<opnd.getop();//在“=”后输出计算结果
+			resulturn = opnd.getop();
+			cout << opnd.getop();//在“=”后输出计算结果
 
 			cout << "\n\n下面是计算过程：\n";
 			showcalpro();
@@ -483,7 +523,8 @@ namespace arithoper
 			opndbuff.emplist();
 			optr.emplist();
 			inte.emplist();
-		}	
+		}
+		return resulturn;
 	}//evalexpre函数的右括号
 
 }//namespace的右括号
