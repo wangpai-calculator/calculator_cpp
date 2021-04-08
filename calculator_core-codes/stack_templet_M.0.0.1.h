@@ -2,7 +2,7 @@
 //这是链栈的实现头文件
 
 #pragma once
-#include "list_templet_headnode_M.0.1.h"
+#include "list_templet_headnode_M.0.2.1.h"
 
 template <typename DataType>
 class WangpaiStack :virtual public WangpaiList<DataType>
@@ -29,7 +29,7 @@ public:
 		DataType* pd;
 		try
 		{
-			pd = &searchd(1);
+			pd = &this->operator[](1);
 		}
 		catch (char* erinfo)//erinfo：error information 错误信息
 		{//就算catch后面只有一条语句，也必须使用大括号
