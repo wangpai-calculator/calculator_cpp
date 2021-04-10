@@ -1,16 +1,16 @@
 
 //
 
-#include "arithoper_M.0.0.1.h"
+#include "arithoper_M.0.1.h"
 
 namespace arithoper
 {
 	using namespace std;
-	WangpaiStack<double> opnd;//opnd：operand 操作数
-	WangpaiStack<char> opndbuff;//opndbuff：operand buffer 缓存的操作数的每一位的值
-	WangpaiStack<char> optr;//optr：operator 运算符
-	WangpaiStack<char> inte;//inte：integration 当前整个表达式的状态
-	WangpaiStack<char> ndbfbackup;//ndbfbackup：operand buffer backup 缓存区的备份
+	stack<double> opnd;//opnd：operand 操作数
+	stack<char> opndbuff;//opndbuff：operand buffer 缓存的操作数的每一位的值
+	stack<char> optr;//optr：operator 运算符
+	stack<char> inte;//inte：integration 当前整个表达式的状态
+	stack<char> ndbfbackup;//ndbfbackup：operand buffer backup 缓存区的备份
 	//此变量ndbfbackup暂时未起到作用，只是为了保留给以后使用
 
 	void inreset()//inreset：input reset 输入重置
@@ -31,20 +31,26 @@ namespace arithoper
 
 	int parematch()//parematch：parentheses match 括号匹配
 	{//左右括号相等时，返回1；左括号多于右括号，返回2；左括号小于右括号，返回0
-		WangpaiStack<char> pare(optr);
-		WangpaiStack<char> antipare;//antipare：anti pare pare的反转
-		while (!pare.isemp())
-			antipare.push(pare.pop());
-		while (!antipare.isemp())
+		stack<char> pare(optr);
+		stack<char> antipare;//antipare：anti pare pare的反转
+		while (!pare.empty())
 		{
-			auto temp = antipare.pop();
+			auto top_temp = pare.top();
+			antipare.push(top_temp);
+			pare.pop();
+		}
+		while (!antipare.empty())
+		{
+			auto temp = antipare.top();
+			antipare.pop();
+
 			switch (temp)
 			{
 			case '(':
 				pare.push(temp);
 				break;
 			case ')':
-				if (!pare.isemp() && '(' == pare.getop())
+				if (!pare.empty() && '(' == pare.top())
 					pare.pop();
 				else
 					return false;
@@ -52,7 +58,7 @@ namespace arithoper
 				break;
 			}
 		}
-		if (pare.isemp())//如果最后pare为空，说明左右括号相等
+		if (pare.empty())//如果最后pare为空，说明左右括号相等
 			return true;
 		else //如果最后pare不为空，说明左括号数量多于右括号
 			return 2;
@@ -73,74 +79,87 @@ namespace arithoper
 			return '>';
 	}
 
-	void show(WangpaiStack<char>& expression)//展示整个表达式，expression自身必须要是以栈保存的逆序
+	void show(stack<char>& expression)//展示整个表达式，expression自身必须要是以栈保存的逆序
 	{
-		if (true == expression.isemp())
+		if (true == expression.empty())
 			return;
 		else
 		{
 			coutset(10);
 			cout << endl;
-			for (int order = expression.count(); order >= 1; --order)
-				cout << expression[order];
+			for (int order = expression.size() - 1; order >= 0; --order)
+				cout << stack_auxCla::index(expression, order);
+
 		}
 	}
 
-	void show(WangpaiStack<char>& expression, WangpaiStack<double>& medresult, char delimiter)
+	void show(stack<char>& expression, stack<double>& medresult, char delimiter)
 		// medresult：intermediate result 中间结果
 	{//这里delimiter有默认参数，默认参数为#，当其为其他符号时，意味着可能将输出最后的定界符前置
-	 //expression、medresult自身必须要是以栈保存的逆序
+		//expression、medresult自身必须要是以栈保存的逆序
 
-		if (true == expression.isemp())
+		if (true == expression.empty())
 			return;
 		else
 		{
 			coutset(10);
 			cout << endl;
-			int reorder_exp = expression.count();//reorder_exp：reverse order expression expression的倒数序号
-			int reorder_med = medresult.count();//reorder_med：reverse order medresult medresult的倒数序号
-			int lowbd = 1;//lowbd：lower bound 下界
-			if ('#' != delimiter && delimiter == expression[1])
+			int reorder_exp = expression.size() - 1;//reorder_exp：reverse order expression expression的倒数序号
+			int reorder_med = medresult.size() - 1;//reorder_med：reverse order medresult medresult的倒数序号
+			int lowbd = 0;//lowbd：lower bound 下界
+			if ('#' != delimiter && delimiter == stack_auxCla::index(expression, 0))
 			{
 				cout << delimiter;//expression末尾如果有该定界符，将其前置
 				++lowbd;
 			}
 			for (; reorder_exp >= lowbd; --reorder_exp)
 			{//#为转换符
-				if ('#' == expression[reorder_exp])//如果遇到转换符，到medresult里找操作数
+				if ('#' == stack_auxCla::index(expression, reorder_exp))//如果遇到转换符，到medresult里找操作数
 				{
-					cout << medresult[reorder_med];
+					cout << stack_auxCla::index(medresult, reorder_med);
 					--reorder_med;
 				}
 				else
-					cout << expression[reorder_exp];
+					cout << stack_auxCla::index(expression, reorder_exp);
 			}
 		}
 	}
 
 	bool loadopnd()//将opndbuff内的缓存数字转换成操作数压入操作数栈，loadopnd：load operand 装载操作数
 	{//此算法希望尽量不使用链表的方法而使用链栈的方法
-	 //如果实际装载了操作数，返回true
+		//如果实际装载了操作数，返回true
 
-		if (true == opndbuff.isemp())
+		if (true == opndbuff.empty())
 			return false;
 
 		double sum = 0;
-		int length = opndbuff.count();
-		int point = opndbuff.search('.');
+		int point = stack_auxCla::find(opndbuff, '.');
+
 		ndbfbackup = opndbuff;//备用代码，现在没有用
 		if (-1 != point)
 		{
-			WangpaiStack<char> fraction;
-			for (int digit = 1; digit < point; ++digit)
-				fraction.push(opndbuff.pop());//如果有小数部分，先要反转才能弹出
-			for (int digit = 1; !fraction.isemp(); ++digit)
-				sum = sum + (fraction.pop() - '0') / pow(10, digit);
+			stack<char> fraction;
+			for (int digit_order = 0; digit_order < point; ++digit_order)
+			{//如果有小数部分，先要反转才能弹出
+				auto top_temp = opndbuff.top();
+				opndbuff.pop();
+				fraction.push(top_temp);
+			}
+			for (int digit_bit = 1; !fraction.empty(); ++digit_bit)
+			{
+				auto top_temp = fraction.top();
+				fraction.pop();
+				sum = sum + (top_temp - '0') / pow(10, digit_bit);
+			}
 			opndbuff.pop();//小数部分已读取完毕，应去掉缓存里的小数点
 		}
 
-		for (int digit = 1; !opndbuff.isemp(); ++digit)//整数部分可以不用反转直接弹出
-			sum = sum + (opndbuff.pop() - '0') * pow(10, digit - 1);
+		for (int digit = 1; !opndbuff.empty(); ++digit)//整数部分可以不用反转直接弹出
+		{
+			auto top_temp = opndbuff.top();
+			opndbuff.pop();
+			sum = sum + (top_temp - '0') * pow(10, digit - 1);
+		}
 
 		opnd.push(sum);
 		return true;
@@ -149,7 +168,7 @@ namespace arithoper
 	bool unloadopnd()//将操作数栈里的操作数退回缓冲区，unloadopnd：unload operand 退回操作数
 	{//此函数暂时未被使用，只是为了保留给以后使用
 
-		if (true == opnd.isemp())
+		if (true == opnd.empty())
 			return false;
 
 		opnd.pop();
@@ -171,22 +190,22 @@ namespace arithoper
 		case '/':
 			return opndleft / opndright;
 
-		/*
-		//此处现为备用代码，实际上现在小数点已不作运算符，而改由loadopnd函数处理
-		case '.'://此处opndright必须要是非负数
+			/*
+			//此处现为备用代码，实际上现在小数点已不作运算符，而改由loadopnd函数处理
+			case '.'://此处opndright必须要是非负数
 			while (opndright >= 1)
-				opndright /= 10;
+			opndright /= 10;
 			return opndleft + opndright;
-		*/
+			*/
 
 		}
 	}
 
 	void showcalpro()//showcalpro：show the calculation process 展示计算过程
 	{//此函数默认inte里面没有语法错误，而且inte没有被清空
-	 //此函数会首先清空opnd、opndbuff、optr的内容
+		//此函数会首先清空opnd、opndbuff、optr的内容
 
-		if (inte.isemp())
+		if (inte.empty())
 		{
 			cout << endl << "表达式不存在，无法展示细节" << endl;
 			return;
@@ -195,23 +214,29 @@ namespace arithoper
 		bool flag = false;//如果flag为true，说明本函数至少执行了一次计算
 
 		auto inte_temp = inte;
-		if ('=' == inte_temp.getop())
+		if ('=' == inte_temp.top())
 			inte_temp.pop();
 		show(inte_temp);
 
 		auto intedup = inte;//intedup：inte duplicate inte的备份,同时充当本函数的integration
 		auto antinte = inte;//antinte：anti inte inte的反转
-		antinte.deleteall();
-		while (!intedup.isemp())
-			antinte.push(intedup.pop());
-		opnd.deleteall();
-		opndbuff.deleteall();
-		optr.deleteall();
-		char ch_being_read = antinte.pop();	//ch_being_read：characters being read 正在读取的字符
-
-		while (!antinte.isemp() || intedup.isemp() || '=' != intedup.getop())
+		stack_auxCla::empty_stack(antinte);
+		while (!intedup.empty())
 		{
-			if ('=' == ch_being_read && optr.isemp())//如果循环对=前面的操作已处理完毕
+			auto top_temp = intedup.top();
+			intedup.pop();
+			antinte.push(top_temp);
+		}
+		stack_auxCla::empty_stack(opnd);
+		stack_auxCla::empty_stack(opndbuff);
+		stack_auxCla::empty_stack(optr);
+
+		auto ch_being_read = antinte.top();//ch_being_read：characters being read 正在读取的字符
+		antinte.pop();
+
+		while (!antinte.empty() || intedup.empty() || '=' != intedup.top())
+		{
+			if ('=' == ch_being_read && optr.empty())//如果循环对=前面的操作已处理完毕
 			{
 				if (loadopnd())
 					intedup.push('#');//'#'为转换符，以后如在intedup遇到此符，说明此处是操作数，需要去别处寻找
@@ -230,13 +255,13 @@ namespace arithoper
 				if (loadopnd())
 					intedup.push('#');//'#'为转换符，以后如在intedup遇到此符，说明此处是操作数，需要去别处寻找
 
-				if (optr.isemp())
+				if (optr.empty())
 				{
 					optr.push(ch_being_read);
 					intedup.push(ch_being_read);
 					goto input;
 				}
-				switch (precede(optr.getop(), ch_being_read))
+				switch (precede(optr.top(), ch_being_read))
 				{
 				case '<':
 					optr.push(ch_being_read);
@@ -245,9 +270,14 @@ namespace arithoper
 
 				case '>':
 				{//case中如有变量初始化一定要加{},不然会报“初始化操作由case标签跳过”的错误
-							char optr_ = optr.pop();
-							double opndright = opnd.pop();
-							double opndleft = opnd.pop();
+
+							auto optr_ = optr.top();
+							optr.pop();
+							auto opndright = opnd.top();
+							opnd.pop();
+							auto opndleft = opnd.top();
+							opnd.pop();
+
 							for (int i = 1; i <= 3; ++i)
 								intedup.pop();//弹出两个操作数、一个运算符，共三个字符
 							double medresult = calculate(opndleft, optr_, opndright);
@@ -262,12 +292,18 @@ namespace arithoper
 							auto poleft = antinte;//poleft：the leftover in positive order 剩下的正序元素 
 							poleft.push(ch_being_read);
 							auto reverleft = poleft;//reverleft：the leftover in reverse order 剩下的逆序元素
-							reverleft.deleteall();
-							while (!poleft.isemp())
-								reverleft.push(poleft.pop());
+							stack_auxCla::empty_stack(reverleft);
+							while (!poleft.empty())
+							{
+								auto top_temp = poleft.top();
+								reverleft.push(top_temp);
+								poleft.pop();
+
+							}
+
 							auto fulexp = reverleft;//fulexp：full expression 完整表达式
-							fulexp += intedup;/*因为show的传参需要栈逆序，而intedup本身就是逆序，
-											  所以这里是直接将intedup接在reverleft的后面*/
+							/*因为show的传参需要栈逆序，而intedup本身就是逆序，所以这里是直接将intedup接在reverleft的后面*/
+							stack_auxCla::stackCat(fulexp, intedup);
 
 							cout << endl;
 							show(fulexp, opnd, '=');
@@ -280,18 +316,27 @@ namespace arithoper
 
 				case '='://如果两个括号之间没有其他运算符，就只有一个操作数
 				{//case中如有变量初始化一定要加{},不然会报“初始化操作由case标签跳过”的错误
-							optr.pop();//弹出运算符栈的左括号
-							auto opnd_temp = intedup.pop();/*现在弹出的不是左括号，因为intedup中的左括号离栈顶还有一个操作数。
-														   而两个括号之间的操作数不是我们想要弹出的，因此要先保存该操作数*/
-							intedup.pop();//弹出左括号
-							intedup.push(opnd_temp);//将前面被迫先暂时弹出的操作数再加入栈中
+							 optr.pop();//弹出运算符栈的左括号
+
+
+							 auto opnd_temp = intedup.top();
+
+							 /*现在弹出的不是左括号，因为intedup中的左括号离栈顶还有一个操作数。
+							 而两个括号之间的操作数不是我们想要弹出的，因此要先保存该操作数*/
+							 intedup.pop();
+
+							 intedup.pop();//弹出左括号
+							 intedup.push(opnd_temp);//将前面被迫先暂时弹出的操作数再加入栈中
 				}
 					break;
 
 				}//switch的右括号
 			}//else的右括号
 
-		input:	ch_being_read = antinte.pop();
+
+		input:
+			ch_being_read = antinte.top();
+			antinte.pop();
 		}//while的右括号
 
 		if (!flag)//flag不为真，说明很可能用户输入的是一个不需要计算的表达式
@@ -311,7 +356,7 @@ namespace arithoper
 		show(inte);
 		char characters_entered;
 		cin >> characters_entered;
-		while (optr.isemp() || '=' != optr.getop())//以=为结束标志
+		while (optr.empty() || '=' != optr.top())//以=为结束标志
 		{
 			//先尽可能处理所有能单独判断的语法错误
 			if (!cin)
@@ -321,7 +366,7 @@ namespace arithoper
 				show(inte);
 				goto input;
 			}
-			if ('.' == characters_entered&& -1 != opndbuff.search('.'))//一个操作数里，输入了两个小数点
+			if ('.' == characters_entered&& -1 != stack_auxCla::find(opndbuff, '.'))//一个操作数里，输入了两个小数点
 			{
 				cout << endl << "你不能在一个数里输入两个" << "“" << characters_entered << "”"
 					<< "，已为你自动删除" << "“" << characters_entered << "”" << "：" << endl;
@@ -329,11 +374,11 @@ namespace arithoper
 				show(inte);
 				goto input;
 			}
-			if (!opndbuff.isemp() && '0' == opndbuff.getop() && 1 == opndbuff.count()
+			if (!opndbuff.empty() && '0' == opndbuff.top() && 1 == opndbuff.size()
 				&& '.' != characters_entered)//如果输入的数字不是小于1的小数，但是其最高位又为0
 			{
-				cout << endl << "你不能一开始就在数中输入" << "“" << opndbuff.getop() << "”"
-					<< "，已为你自动删除" << "“" << opndbuff.getop() << "”" << "：" << endl;
+				cout << endl << "你不能一开始就在数中输入" << "“" << opndbuff.top() << "”"
+					<< "，已为你自动删除" << "“" << opndbuff.top() << "”" << "：" << endl;
 				opndbuff.pop();//删除一开始输入的0
 				inte.pop();
 				inreset();
@@ -343,7 +388,7 @@ namespace arithoper
 			if (('+' == characters_entered || '-' == characters_entered
 				|| '*' == characters_entered || '/' == characters_entered
 				|| '.' == characters_entered) &&
-				(inte.isemp() || (!isdigit(inte.getop()) && inte.getop() != ')')))
+				(inte.empty() || (!isdigit(inte.top()) && inte.top() != ')')))
 				//如果前面没有第一个操作数，但是后面输入了一个非数字符，报错
 			{
 				cout << endl << "注意：在输入" << "“" << characters_entered << "”" << "前，你必须先输入一个合法的数。"
@@ -355,16 +400,16 @@ namespace arithoper
 			if (('+' == characters_entered || '-' == characters_entered
 				|| '*' == characters_entered || '/' == characters_entered
 				|| '=' == characters_entered || '.' == characters_entered)
-				&& !inte.isemp() && ('+' == inte.getop() || '-' == inte.getop() || '*' == inte.getop()
-				|| '/' == inte.getop() || '(' == inte.getop() || '.' == inte.getop()))//连续输入两个非数字符，报错
+				&& !inte.empty() && ('+' == inte.top() || '-' == inte.top() || '*' == inte.top()
+				|| '/' == inte.top() || '(' == inte.top() || '.' == inte.top()))//连续输入两个非数字符，报错
 			{
-				cout << endl << "你不能在" << "“" << inte.getop() << "”" << "的后面输入"
+				cout << endl << "你不能在" << "“" << inte.top() << "”" << "的后面输入"
 					<< "“" << characters_entered << "”" << "，已为你自动删除" << "“" << characters_entered << "”" << "：" << endl;
 				inreset();
 				show(inte);
 				goto input;
 			}
-			if ('(' == characters_entered && !inte.isemp() && isdigit(inte.getop())
+			if ('(' == characters_entered && !inte.empty() && isdigit(inte.top())
 				&& '.' == characters_entered)//如果左括号前面有数字、小数点，报错
 			{
 				cout << endl << "左括号前面不能有数字，已为你自动删除" << "“" << characters_entered << "”" << "：" << endl;
@@ -374,15 +419,15 @@ namespace arithoper
 			}
 			if (')' == characters_entered)
 			{
-				if (!inte.isemp() && (('+' == inte.getop() || '-' == inte.getop()
-					|| '*' == inte.getop() || '/' == inte.getop())))//如果右括号前面有四则运算符，报错
+				if (!inte.empty() && (('+' == inte.top() || '-' == inte.top()
+					|| '*' == inte.top() || '/' == inte.top())))//如果右括号前面有四则运算符，报错
 				{
 					cout << endl << "右括号前面不能有四则运算符，已为你自动删除" << "“" << characters_entered << "”" << "：" << endl;
 					inreset();
 					show(inte);
 					goto input;
 				}
-				if (!inte.isemp() && '(' == inte.getop())
+				if (!inte.empty() && '(' == inte.top())
 				{
 					cout << endl << "这一对括号里什么也没有，已为你自动删除这一对括号：" << endl;
 					inreset();
@@ -414,7 +459,7 @@ namespace arithoper
 
 			//现在的正常情况下的处理
 			//注意：此区域if else判断语句后面紧挨着的就是输入语句，所以这里的代码块中可能可以省略“goto input”部分
-			if ('=' == characters_entered && optr.isemp())//如果循环对=前面的操作已处理完毕，那么这里将做收尾工作用以结束循环
+			if ('=' == characters_entered && optr.empty())//如果循环对=前面的操作已处理完毕，那么这里将做收尾工作用以结束循环
 			{
 				loadopnd();
 				optr.push(characters_entered);//此处让“=”入栈的目的是为了下次能结束循环
@@ -431,14 +476,14 @@ namespace arithoper
 			else
 			{
 				loadopnd();
-				if (optr.isemp())//如果运算符栈里什么也没有，该运算符就直接入栈
+				if (optr.empty())//如果运算符栈里什么也没有，该运算符就直接入栈
 				{
 					optr.push(characters_entered);
 					inte.push(characters_entered);
 					show(inte);
 					goto input;//因为外层的else块还有剩余的switch块，所以这里不能省略此语句
 				}
-				switch (precede(optr.getop(), characters_entered))
+				switch (precede(optr.top(), characters_entered))
 				{/*此switch语句结束后，就直接是else的结束部分，而后者结束后就到了输入部分，
 				 所以这里“break”可能可以替代“goto input”*/
 
@@ -449,9 +494,9 @@ namespace arithoper
 					break;
 
 				case '>':
-					if ('(' != characters_entered && '/' == optr.getop() && !opnd.isemp() && 0 == opnd.getop())//如果把0作为除数
+					if ('(' != characters_entered && '/' == optr.top() && !opnd.empty() && 0 == opnd.top())//如果把0作为除数
 					{
-						if (!inte.isemp() && '0' == inte.getop())
+						if (!inte.empty() && '0' == inte.top())
 						{
 							cout << endl << "抱歉，0不能作除数，已为你自动删除：" << endl;
 							inreset();
@@ -464,17 +509,21 @@ namespace arithoper
 						{
 							cout << endl << "中间有的算式让除数为0，本次计算失败，正在为你定位到新输入：" << endl;
 							inreset();
-							opnd.deleteall();
-							opndbuff.deleteall();
-							optr.deleteall();
-							inte.deleteall();
+							stack_auxCla::empty_stack(opnd);
+							stack_auxCla::empty_stack(opndbuff);
+							stack_auxCla::empty_stack(optr);
+							stack_auxCla::empty_stack(inte);
 							break;
 						}
 					}
 					{//case中如有变量初始化一定要加{},不然会报初始化操作由case标签跳过
-						char optr_ = optr.pop();
-						double opndright = opnd.pop();
-						double opndleft = opnd.pop();
+
+						auto optr_ = optr.top();
+						optr.pop();
+						auto opndright = opnd.top();
+						opnd.pop();
+						auto opndleft = opnd.top();
+						opnd.pop();
 						opnd.push(calculate(opndleft, optr_, opndright));
 						continue;//跳过最后的输入部分。因为这里通过计算产生了新的操作数，所以不需要输入
 					}
@@ -492,29 +541,32 @@ namespace arithoper
 		input:	cin >> characters_entered;
 		}//while的右括号
 
-		if (opnd.isemp())
+		if (opnd.empty())
 		{
 			cout << endl << "此表达式为空，计算失败" << endl;
 			inreset();
-			opnd.deleteall();
-			opndbuff.deleteall();
-			optr.deleteall();
-			inte.deleteall();
+
+			stack_auxCla::empty_stack(opnd);
+			stack_auxCla::empty_stack(opndbuff);
+			stack_auxCla::empty_stack(optr);
+			stack_auxCla::empty_stack(inte);
 		}
 		else
 		{
 			cout << "\n\n输入结束，下面是计算结果：\n";
 			show(inte);//输出表达式（包括最后的“=”）
-			cout << opnd.getop();//在“=”后输出计算结果
+			cout << opnd.top();//在“=”后输出计算结果
 
 			cout << "\n\n下面是计算过程：\n";
 			showcalpro();
 			cout << endl << endl;
 
-			opnd.deleteall();
-			opndbuff.deleteall();
-			optr.deleteall();
-			inte.deleteall();
+			inreset();
+
+			stack_auxCla::empty_stack(opnd);
+			stack_auxCla::empty_stack(opndbuff);
+			stack_auxCla::empty_stack(optr);
+			stack_auxCla::empty_stack(inte);
 		}
 	}//evalexpre函数的右括号
 

@@ -7,7 +7,13 @@
 #include <cmath>
 #include <iostream>
 
-#include "stack_templet_M.0.0.1.h"
+#include <stack>
+
+
+using namespace std;
+
+
+#include "stack_auxiliary.h"
 
 namespace arithoper
 {
@@ -19,9 +25,9 @@ namespace arithoper
 
 	char precede(char operleft, char operight);
 
-	void show(WangpaiStack<char>& expression);
+	void show(stack<char>& expression);
 
-	void show(WangpaiStack<char>& expression, WangpaiStack<double>& medresult, char delimiter = '#');
+	void show(stack<char>& expression, stack<double>& medresult, char delimiter = '#');
 
 	bool loadopnd();
 
