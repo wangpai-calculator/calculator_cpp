@@ -6,6 +6,7 @@
 #include <iterator>
 
 
+using namespace std;
 
 
 class stack_auxCla//auxCla：auxiliary Class 辅助的类
@@ -31,32 +32,23 @@ public:
 	}
 
 	template <typename DataType>
-	static DataType index(const std::stack<DataType>& this_stack, int seqnum)//此形参不能使用const
+	static const DataType index(const std::stack<DataType>& this_stack, int seqnum)
 	{//规定靠近栈顶的序号值小，栈顶的序号值为0
-		
-		using namespace std;
-
-		//因为stack类无法直接遍历，所以只好先转化为vector
-		vector<DataType> vector_aux(stack2vector(this_stack));//aux：auxiliary 辅助
-
-		return vector_aux[seqnum];
+		return (stack2vector(this_stack))[seqnum];//因为stack类无法直接遍历，所以只好先转化为vector
 	}
 
 	template <typename DataType>
 	static int find(const std::stack<DataType>& this_stack, const DataType& data)
 	{//返回值为-1代表未找到.栈顶的序号值为0
 
-		using namespace std;
-
 		int stack_length = this_stack.size();
 
 		//因为stack类无法直接遍历，所以只好先转化为vector
-		vector<DataType> vector_aux(stack2vector(this_stack));//aux：auxiliary 辅助
+		std::vector<DataType> vector_aux(stack2vector(this_stack));//aux：auxiliary 辅助
 
 		for (int order = 0; order < stack_length; ++order)
 		if (data == vector_aux[order])
 			return order;
-
 
 		return -1;
 	}

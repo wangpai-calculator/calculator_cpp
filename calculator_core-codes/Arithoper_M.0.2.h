@@ -1,18 +1,37 @@
 
-//
+//Arithoper：arithmetic operation 算术运算 
 
-#include "arithoper_M.0.1.h"
+#pragma once
 
-namespace arithoper
+#include <cctype>
+#include <cmath>
+#include <iostream>
+#include <stack>
+
+#include "stack_auxiliary_M.0.0.1.h"
+
+using namespace std;//虽然按照规范，在此处使用此代码有隐患，但事实上，这样做很方便
+
+//#include "arithoper_M.0.1.h"
+
+class Arithoper
 {
-	using namespace std;
+	/*-----------------------------------private权限开始------------------------------------------------------------*/
+private:
 	stack<double> opnd;//opnd：operand 操作数
 	stack<char> opndbuff;//opndbuff：operand buffer 缓存的操作数的每一位的值
 	stack<char> optr;//optr：operator 运算符
 	stack<char> inte;//inte：integration 当前整个表达式的状态
+	stack<char> buttons;//储存得到定义的按键
 	stack<char> ndbfbackup;//ndbfbackup：operand buffer backup 缓存区的备份
 	//此变量ndbfbackup暂时未起到作用，只是为了保留给以后使用
 
+	/*-----------------------------------private权限结束------------------------------------------------------------*/
+
+
+
+	/*-----------------------------------private权限开始------------------------------------------------------------*/
+private:
 	void inreset()//inreset：input reset 输入重置
 	{
 		using namespace std;
@@ -27,6 +46,32 @@ namespace arithoper
 		cout.precision(n);
 		auto oldset = cout.setf(ios_base::fixed, ios_base::floatfield);
 		return oldset;
+	}
+
+	void initButton()
+	{
+		for (char num = '0'; num <= '9'; ++num)//设置数字键
+			buttons.push(num);
+
+		buttons.push('=');//设置等于号
+
+		buttons.push('+');//设置加号
+		buttons.push('-');//设置减号
+		buttons.push('*');//设置乘号
+		buttons.push('/');//设置除号
+
+		buttons.push('(');//设置左小括号
+		buttons.push(')');//设置右小括号
+
+		buttons.push('.');//设置小数点符号
+	}
+
+	bool isDefinedButton(char button)
+	{
+		if (stack_auxCla::find(buttons, button) != -1)
+			return true;
+		else
+			return false;
 	}
 
 	int parematch()//parematch：parentheses match 括号匹配
@@ -79,7 +124,7 @@ namespace arithoper
 			return '>';
 	}
 
-	void show(stack<char>& expression)//展示整个表达式，expression自身必须要是以栈保存的逆序
+	void show(const stack<char>& expression)//展示整个表达式，expression自身必须要是以栈保存的逆序（逆序是指后面输入的内容位于栈顶）
 	{
 		if (true == expression.empty())
 			return;
@@ -93,10 +138,10 @@ namespace arithoper
 		}
 	}
 
-	void show(stack<char>& expression, stack<double>& medresult, char delimiter)
-		// medresult：intermediate result 中间结果
+	// medresult：intermediate result 中间结果
+	void show(const stack<char>& expression, const stack<double>& medresult, char delimiter)
 	{//这里delimiter有默认参数，默认参数为#，当其为其他符号时，意味着可能将输出最后的定界符前置
-		//expression、medresult自身必须要是以栈保存的逆序
+		//expression、medresult自身必须要是以栈保存的逆序（逆序是指后面输入的内容位于栈顶）
 
 		if (true == expression.empty())
 			return;
@@ -107,7 +152,7 @@ namespace arithoper
 			int reorder_exp = expression.size() - 1;//reorder_exp：reverse order expression expression的倒数序号
 			int reorder_med = medresult.size() - 1;//reorder_med：reverse order medresult medresult的倒数序号
 			int lowbd = 0;//lowbd：lower bound 下界
-			if ('#' != delimiter && delimiter == stack_auxCla::index(expression, 0))
+			if ('#' != delimiter && delimiter == expression.top())
 			{
 				cout << delimiter;//expression末尾如果有该定界符，将其前置
 				++lowbd;
@@ -189,18 +234,14 @@ namespace arithoper
 			return opndleft * opndright;
 		case '/':
 			return opndleft / opndright;
-
-			/*
-			//此处现为备用代码，实际上现在小数点已不作运算符，而改由loadopnd函数处理
-			case '.'://此处opndright必须要是非负数
-			while (opndright >= 1)
-			opndright /= 10;
-			return opndleft + opndright;
-			*/
-
 		}
 	}
 
+	/*此函数与evalexpre()函数中显示表达式的过程还是有区别的，所以不能将它们之中显示的部分提取出来制成一个单独的函数为它们调用。
+	它们的区别在于：
+	1.刚开始用户的输入一定全是字符，而后续计算时会产生浮点数。因此各自使用的显示函数将不同
+	2.刚开始的显示(evalexpre)涉及计算过程中，对中间结果异常（如0除的问题）的处理
+	3.显示过程(showcalpro)需要涉及栈的合并、以及美观上的处理*/
 	void showcalpro()//showcalpro：show the calculation process 展示计算过程
 	{//此函数默认inte里面没有语法错误，而且inte没有被清空
 		//此函数会首先清空opnd、opndbuff、optr的内容
@@ -346,6 +387,16 @@ namespace arithoper
 		}
 
 	}
+	/*-----------------------------------private权限结束------------------------------------------------------------*/
+
+
+	/*-----------------------------------public权限开始------------------------------------------------------------*/
+public:
+
+	Arithoper()
+	{
+		initButton();//初始化按键
+	}
 
 	void evalexpre()//evalexpre：evaluate expression 对表达式求值
 	{
@@ -362,6 +413,13 @@ namespace arithoper
 			if (!cin)
 			{
 				cout << endl << "你进行了意外的输入，已为你重置" << endl;
+				inreset();
+				show(inte);
+				goto input;
+			}
+			if (!isDefinedButton(characters_entered))
+			{
+				cout << endl << "你输入了未定义按键，已为你清除" << endl;
 				inreset();
 				show(inte);
 				goto input;
@@ -569,5 +627,7 @@ namespace arithoper
 			stack_auxCla::empty_stack(inte);
 		}
 	}//evalexpre函数的右括号
+	/*-----------------------------------public权限结束------------------------------------------------------------*/
 
-}//namespace的右括号
+
+};//Arithoper class的右括号、分号
